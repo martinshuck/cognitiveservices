@@ -11,7 +11,7 @@ namespace ASB.AI.Demo.FaceApi
         
         // Used for all examples.
         // URL for the images.
-        const string IMAGE_BASE_URL = "https://csdx.blob.core.windows.net/resources/Face/Images/";       
+        const string IMAGE_BASE_FOLDER = @"..\..\..\samples\";       
 
         static readonly string SUBSCRIPTION_KEY =
             Environment.GetEnvironmentVariable("AZURE_FACEAPI_SUBSCRIPTION_KEY");
@@ -37,7 +37,7 @@ namespace ASB.AI.Demo.FaceApi
             // Find Similar - find a similar face from a list of faces.
             //FindSimilar(client, IMAGE_BASE_URL, RECOGNITION_MODEL4).Wait();
             // Verify - compare two images if the same person or not.
-            Verify(client, IMAGE_BASE_URL, RECOGNITION_MODEL4).Wait();            
+            Verify(client, IMAGE_BASE_FOLDER, RECOGNITION_MODEL4).Wait();            
 
         }
 
@@ -59,31 +59,31 @@ namespace ASB.AI.Demo.FaceApi
         * or a Person object and determines whether they belong to the same person. If you pass in a Person object, 
         * you can optionally pass in a PersonGroup to which that Person belongs to improve performance.
         */
-        public static async Task Verify(IFaceClient client, string url, string recognitionModel03)
+        public static async Task Verify(IFaceClient client, string baseFolder, string recognitionModel03)
         {
             Console.WriteLine("========VERIFY========");
             Console.WriteLine();
 
-            List<string> targetImageFileNames = new List<string> { "Family1-Dad1.jpg", "Family1-Dad2.jpg" };
-            string sourceImageFileName1 = "Family1-Dad3.jpg";
-            string sourceImageFileName2 = "Family1-Son1.jpg";
+            List<string> targetImageFileNames = new List<string> { "DriversLicense.jpg" };
+            string sourceImageFileName1 = "nzpassport.png";
+            string sourceImageFileName2 = "photo.jpg";
 
             List<Guid> targetFaceIds = new List<Guid>();
             foreach (var imageFileName in targetImageFileNames)
             {
                 // Detect faces from target image url.
-                List<DetectedFace> detectedFaces = await DetectFaceRecognize(client, $"{url}{imageFileName} ", recognitionModel03);
+                List<DetectedFace> detectedFaces = await DetectFaceRecognize(client, $"{baseFolder}{imageFileName} ", recognitionModel03);
                 targetFaceIds.Add(detectedFaces[0].FaceId.Value);
                 Console.WriteLine($"{detectedFaces.Count} faces detected from image `{imageFileName}`.");
             }
 
             // Detect faces from source image file 1.
-            List<DetectedFace> detectedFaces1 = await DetectFaceRecognize(client, $"{url}{sourceImageFileName1} ", recognitionModel03);
+            List<DetectedFace> detectedFaces1 = await DetectFaceRecognize(client, $"{baseFolder}{sourceImageFileName1} ", recognitionModel03);
             Console.WriteLine($"{detectedFaces1.Count} faces detected from image `{sourceImageFileName1}`.");
             Guid sourceFaceId1 = detectedFaces1[0].FaceId.Value;
 
             // Detect faces from source image file 2.
-            List<DetectedFace> detectedFaces2 = await DetectFaceRecognize(client, $"{url}{sourceImageFileName2} ", recognitionModel03);
+            List<DetectedFace> detectedFaces2 = await DetectFaceRecognize(client, $"{baseFolder}{sourceImageFileName2} ", recognitionModel03);
             Console.WriteLine($"{detectedFaces2.Count} faces detected from image `{sourceImageFileName2}`.");
             Guid sourceFaceId2 = detectedFaces2[0].FaceId.Value;
 
@@ -104,19 +104,12 @@ namespace ASB.AI.Demo.FaceApi
             Console.WriteLine();
         }
 
-        // Detect faces from image url for recognition purpose. This is a helper method for other functions in this quickstart.
-        // Parameter `returnFaceId` of `DetectWithUrlAsync` must be set to `true` (by default) for recognition purpose.
-        // Parameter `FaceAttributes` is set to include the QualityForRecognition attribute. 
-        // Recognition model must be set to recognition_03 or recognition_04 as a result.
-        // Result faces with insufficient quality for recognition are filtered out. 
-        // The field `faceId` in returned `DetectedFace`s will be used in Face - Find Similar, Face - Verify. and Face - Identify.
-        // It will expire 24 hours after the detection call.
-        // <snippet_face_detect_recognize>
-        private static async Task<List<DetectedFace>> DetectFaceRecognize(IFaceClient faceClient, string url, string recognition_model)
+        // Detect faces from image file for recognition purpose. This is a helper method for other functions in this quickstart.
+        private static async Task<List<DetectedFace>> DetectFaceRecognize(IFaceClient faceClient, string imageName, string recognition_model)
         {
-            // Detect faces from image URL. Since only recognizing, use the recognition model 1.
+            // Detect faces from image file. Since only recognizing, use the recognition model 1.
             // We use detection model 3 because we are not retrieving attributes.
-            IList<DetectedFace> detectedFaces = await faceClient.Face.DetectWithUrlAsync(url, recognitionModel: recognition_model, detectionModel: DetectionModel.Detection03, returnFaceAttributes: new List<FaceAttributeType> { FaceAttributeType.QualityForRecognition });
+            IList<DetectedFace> detectedFaces = await faceClient.Face.DetectWithStreamAsync(File.OpenRead(imageName), recognitionModel: recognition_model, detectionModel: DetectionModel.Detection03, returnFaceAttributes: new List<FaceAttributeType> { FaceAttributeType.QualityForRecognition });
             List<DetectedFace> sufficientQualityFaces = new List<DetectedFace>();
             foreach (DetectedFace detectedFace in detectedFaces)
             {
@@ -126,7 +119,7 @@ namespace ASB.AI.Demo.FaceApi
                     sufficientQualityFaces.Add(detectedFace);
                 }
             }
-            Console.WriteLine($"{detectedFaces.Count} face(s) with {sufficientQualityFaces.Count} having sufficient quality for recognition detected from image `{Path.GetFileName(url)}`");
+            Console.WriteLine($"{detectedFaces.Count} face(s) with {sufficientQualityFaces.Count} having sufficient quality for recognition detected from image `{Path.GetFileName(imageName)}`");
 
             return sufficientQualityFaces.ToList();
         }

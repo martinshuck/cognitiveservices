@@ -21,7 +21,6 @@ namespace ASB.AI.Demo.Speech
             return SpeechConfig.FromSubscription(key, "australiaeast");
         }
 
-
         static async Task RecognizeSpeechAsync(SpeechConfig config)
         {
             // Creates a speech recognizer.
