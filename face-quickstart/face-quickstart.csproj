@@ -9,6 +9,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="samples\**" />
+    <EmbeddedResource Remove="samples\**" />
+    <None Remove="samples\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.Azure.CognitiveServices.Vision.Face" Version="2.8.0-preview.2" />
   </ItemGroup>
 
